@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VivaBot — Register</title>
+  <link rel="stylesheet" href="styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+
+<nav class="navbar">
+  <a class="navbar-brand" href="login.html"> VivaBot</a>
+  <span class="text-muted text-sm">Create your account</span>
+</nav>
+
+<div class="page-center">
+  <div class="text-center mb-24" style="margin-bottom:28px">
+    <div class="auth-logo"></div>
+    <h1 class="auth-title">Create account</h1>
+    <p class="auth-sub">Join VivaBot to start your AI-powered exam</p>
+  </div>
+
+  <div class="card">
+    <div class="alert" id="alert"></div>
+
+    <div class="form-group">
+      <label class="form-label">Register as</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="role-card selected" id="card-student" onclick="selectRole('STUDENT')">
+          <div style="font-size:28px;margin-bottom:6px"></div>
+          <div style="font-weight:600;font-size:14px">Student</div>
+          <div style="font-size:12px;color:var(--gray-500);margin-top:3px">Take viva exams</div>
+        </div>
+        <div class="role-card" id="card-admin" onclick="selectRole('ADMIN')">
+          <div style="font-size:28px;margin-bottom:6px"></div>
+          <div style="font-weight:600;font-size:14px">Staff / Faculty</div>
+          <div style="font-size:12px;color:var(--gray-500);margin-top:3px">Manage &amp; view results</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="fullname">Full name</label>
+      <input class="form-control" type="text" id="fullname"
+             placeholder="e.g. Divyapriya K">
+    </div>
+
+    <div class="form-group" id="reg-num-group">
+      <label class="form-label" for="regnumber">
+        Register number <span class="text-muted">(students only)</span>
+      </label>
+      <input class="form-control" type="text" id="regnumber"
+             placeholder="e.g. 211221104002">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="email">Email address</label>
+      <input class="form-control" type="email" id="email"
+             placeholder="you@college.edu">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="password">
+        Password <span class="text-muted">(min 6 characters)</span>
+      </label>
+      <input class="form-control" type="password" id="password"
+             placeholder="••••••••">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="confirm">Confirm password</label>
+      <input class="form-control" type="password" id="confirm"
+             placeholder="••••••••">
+    </div>
+
+    <button class="btn btn-primary btn-lg btn-block" id="reg-btn" onclick="doRegister()">
+      Create account
+    </button>
+
+    <div class="divider"></div>
+    <p class="text-center text-sm text-muted">
+      Already have an account?
+      <a href="login.html" class="auth-link">Sign in</a>
+    </p>
+  </div>
+</div>
+
+<style>
+  .role-card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: all .15s;
+    background: rgba(255,255,255,0.02);
+  }
+  .role-card:hover    { border-color: rgba(6,182,212,0.35); }
+  .role-card.selected { border-color: rgba(124,58,237,0.45); background: rgba(124,58,237,0.12); }
+</style>
+
+<script src="api.js"></script>
+<script>
+  if (getToken()) {
+    window.location.href = isAdmin() ? 'admin.html' : 'exam.html';
+  }
+
+  let selectedRole = 'STUDENT';
+
+  function selectRole(role) {
+    selectedRole = role;
+    document.getElementById('card-student').classList.toggle('selected', role === 'STUDENT');
+    document.getElementById('card-admin').classList.toggle('selected',   role === 'ADMIN');
+    document.getElementById('reg-num-group').style.display = role === 'STUDENT' ? 'block' : 'none';
+  }
+
+  async function doRegister() {
+    const fullName      = document.getElementById('fullname').value.trim();
+    const registerNumber = selectedRole === 'STUDENT'
+                          ? document.getElementById('regnumber').value.trim() : '';
+    const email         = document.getElementById('email').value.trim();
+    const password      = document.getElementById('password').value;
+    const confirm       = document.getElementById('confirm').value;
+    const btn           = document.getElementById('reg-btn');
+
+    hideAlert('alert');
+
+    if (!fullName)           { showAlert('alert', 'Full name is required.');              return; }
+    if (selectedRole === 'STUDENT' && !registerNumber)
+                             { showAlert('alert', 'Register number is required for students.'); return; }
+    if (!email || !password) { showAlert('alert', 'Email and password are required.');    return; }
+    if (password.length < 6) { showAlert('alert', 'Password must be at least 6 characters.'); return; }
+    if (password !== confirm) { showAlert('alert', 'Passwords do not match.');             return; }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Creating account…';
+
+    try {
+      await apiFetch('/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({ fullName, registerNumber, email, password, role: selectedRole })
+      });
+      showAlert('alert', 'Registration successful! Redirecting to login…', 'success');
+      setTimeout(() => window.location.href = 'login.html', 1800);
+    } catch (err) {
+      showAlert('alert', err.message || 'Registration failed. Try again.');
+      btn.disabled = false;
+      btn.innerHTML = 'Create account';
+    }
+  }
+</script>
+</body>
+</html>

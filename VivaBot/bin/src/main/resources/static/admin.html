@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VivaBot — Admin Dashboard</title>
+  <link rel="stylesheet" href="styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+
+<nav class="navbar">
+  <a class="navbar-brand" href="admin.html"> VivaBot</a>
+  <div class="navbar-right">
+    <span id="nav-email" class="text-muted"></span>
+    <span class="user-badge" style="background:rgba(124,58,237,0.18);color:rgba(232,232,240,0.92);border:1px solid rgba(124,58,237,0.35)">ADMIN</span>
+    <a href="results.html" class="btn btn-outline btn-sm"> Results</a>
+    <button class="btn btn-outline btn-sm" onclick="apiLogout()">Logout</button>
+  </div>
+</nav>
+
+<div class="container page">
+
+  <div style="margin-bottom:28px">
+    <h1>Admin Dashboard</h1>
+    <p class="text-muted">Manage subjects, study materials, exam sessions and student results.</p>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" data-tab="tab-overview">Overview</button>
+    <button class="tab-btn" data-tab="tab-subjects">Subjects & Materials</button>
+  </div>
+
+  
+  <div class="tab-panel active" id="tab-overview">
+
+   
+    <div class="stat-grid mb-24" style="margin-bottom:24px" id="stats-grid">
+      <div class="stat-card">
+        <div class="spinner spinner-dark"></div>
+        <div class="stat-label">Loading…</div>
+      </div>
+    </div>
+
+    
+    <div class="card mb-24" style="margin-bottom:20px">
+      <h3 class="mb-16" style="margin-bottom:16px">Grade Distribution</h3>
+      <div id="grade-dist">
+        <div class="text-muted text-sm">Loading…</div>
+      </div>
+    </div>
+  </div>
+
+ 
+  <div class="tab-panel" id="tab-subjects">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+
+     
+      <div class="card">
+        <h3 class="mb-16" style="margin-bottom:16px">Add Subject</h3>
+        <div class="alert" id="subject-alert"></div>
+
+        <div class="form-group">
+          <label class="form-label">Subject name</label>
+          <input class="form-control" id="new-subject" placeholder="e.g. DBMS, Java, OS">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description (optional)</label>
+          <textarea class="form-control" id="new-desc" rows="2"
+                    placeholder="Brief description…"></textarea>
+        </div>
+
+		
+		<div class="form-group">
+		  <label class="form-label">Exam difficulty</label>
+		  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+		    <div class="diff-btn" id="adiff-EASY" onclick="selectAdminDiff('EASY')">
+		      <span style="font-size:20px;font-weight:600 text-align=center">Easy</span>
+		    </div>
+		    <div class="diff-btn selected" id="adiff-MEDIUM" onclick="selectAdminDiff('MEDIUM')"> 
+		      <span style="font-size:20px;font-weight:600 text-align=center">Medium</span>
+		    </div>
+		    <div class="diff-btn" id="adiff-HARD" onclick="selectAdminDiff('HARD')">  
+		      <span style="font-size:20px;font-weight:600 text-align=center">Hard</span>
+		    </div>
+		  </div>
+		</div>
+        <div class="form-group">
+          <label class="form-label">
+            Number of questions: <strong id="admin-q-label">5</strong>
+          </label>
+          <input type="range" id="admin-q-count" min="1" max="10" value="5"
+                 style="width:100%;accent-color:var(--primary);margin:8px 0"
+                 oninput="document.getElementById('admin-q-label').textContent=this.value">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--gray-500)">
+            <span>1</span><span>5</span><span>10</span>
+          </div>
+        </div>
+
+        <button class="btn btn-primary w-full" onclick="addSubject()">Add Subject</button>
+
+        <div class="divider"></div>
+        <h3 style="margin-bottom:12px">All Subjects</h3>
+        <div id="subject-list" style="display:flex;flex-wrap:wrap;gap:8px">
+          <span class="text-muted text-sm">Loading…</span>
+        </div>
+      </div>
+
+     
+      <div class="card">
+        <h3 class="mb-16" style="margin-bottom:16px">Upload Study Material (PDF)</h3>
+        <div class="alert" id="upload-alert"></div>
+
+        <div class="form-group">
+          <label class="form-label">Subject</label>
+          <select class="form-control" id="upload-subject">
+            <option value="">Select subject first…</option>
+          </select>
+        </div>
+
+        <div class="file-drop" id="file-drop" onclick="document.getElementById('file-input').click()">
+          <input type="file" id="file-input" accept=".pdf" style="display:none"
+                 onchange="onFileSelect(this)">
+          <div id="drop-content">
+            <div style="font-size:36px;margin-bottom:8px"></div>
+            <p class="text-muted text-sm">Click to select PDF (max 10MB)</p>
+          </div>
+        </div>
+
+        <button class="btn btn-primary w-full mt-16" style="margin-top:14px"
+                onclick="uploadMaterial()">Upload Material</button>
+
+       
+        <div id="materials-list" style="margin-top:16px"></div>
+      </div>
+
+    </div>
+  </div>
+
+
+</div>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<style>
+  .diff-btn {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 6px;
+    text-align: center;
+    cursor: pointer;
+    transition: all .15s;
+    background: rgba(255,255,255,0.02);
+  }
+  .diff-btn:hover    { border-color: rgba(6,182,212,0.35); }
+  .diff-btn.selected { border-color: rgba(124,58,237,0.45); background: rgba(124,58,237,0.12); }
+  .subject-pill {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all .15s;
+    color: var(--text);
+  }
+  .subject-pill:hover { border-color: rgba(6,182,212,0.35); color: var(--accent2); }
+  @media (max-width: 640px) {
+    #tab-subjects > div { grid-template-columns: 1fr !important; }
+  }
+</style>
+
+
+<script src="api.js"></script>
+<script>
+  requireAdmin();
+  renderNavUser();
+  initTabs();
+  
+  let adminDiff = 'MEDIUM';
+
+    function selectAdminDiff(d) {
+      adminDiff = d;
+      ['EASY', 'MEDIUM', 'HARD'].forEach(x =>
+        document.getElementById('adiff-' + x).classList.toggle('selected', x === d)
+      );
+    }
+
+  let allSubjects = [];
+  let currentPage = 0;
+
+ 
+  window.addEventListener('load', () => {
+    loadOverview();
+    loadSubjects();
+  });
+
+ 
+  async function loadOverview() {
+    try {
+      const summary = await apiGetSummary();
+
+     
+      document.getElementById('stats-grid').innerHTML = `
+        <div class="stat-card">
+          <div class="stat-value">${summary.totalExams}</div>
+          <div class="stat-label">Total Exams</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${summary.classAverage}</div>
+          <div class="stat-label">Class Average</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${summary.passRate}</div>
+          <div class="stat-label">Pass Rate</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${allSubjects.length}</div>
+          <div class="stat-label">Subjects</div>
+        </div>`;
+
+     
+      const dist = summary.gradeDistribution || {};
+      const total = Object.values(dist).reduce((a,b)=>a+b,0);
+      const colors = {A:'var(--success)',B:'#0891B2',C:'var(--warning)',D:'#EA580C',F:'var(--danger)'};
+      document.getElementById('grade-dist').innerHTML = ['A','B','C','D','F'].map(g => {
+        const count = dist[g] || 0;
+        const pct   = total > 0 ? Math.round(count/total*100) : 0;
+        return `
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
+            <span style="width:20px;font-weight:600;color:${colors[g]}">Grade ${g}</span>
+            <div class="score-bar-wrap" style="flex:1">
+              <div class="score-bar" style="background:${colors[g]};width:${pct}%"></div>
+            </div>
+            <span style="width:28px;font-size:13px;color:var(--gray-500)">${count}</span>
+          </div>`;
+      }).join('');
+
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+ 
+  async function loadSubjects() {
+    try {
+      allSubjects = await apiGetSubjects();
+      renderSubjectList();
+      renderSubjectDropdowns();
+    } catch (e) {}
+  }
+
+  function renderSubjectList() {
+    document.getElementById('subject-list').innerHTML =
+      allSubjects.length === 0
+        ? '<span class="text-muted text-sm">No subjects yet.</span>'
+        : allSubjects.map(s => `
+            <span class="subject-pill" onclick="selectUploadSubject(${s.id})"
+                  title="Difficulty: ${s.examDifficulty||'MEDIUM'} | Questions: ${s.examTotalQuestions||5}">
+              ${s.subjectName}
+              <span style="font-size:10px;color:var(--muted);margin-left:4px">${s.examDifficulty||'MED'} · ${s.examTotalQuestions||5}Q</span>
+            </span>`).join('');
+  }
+
+  function renderSubjectDropdowns() {
+    const opts = allSubjects.map(s =>
+      `<option value="${s.id}">${s.subjectName}</option>`).join('');
+    document.getElementById('upload-subject').innerHTML =
+      '<option value="">Select subject…</option>' + opts;
+  }
+
+  function selectUploadSubject(id) {
+    document.getElementById('upload-subject').value = id;
+    loadMaterials(id);
+  }
+
+  async function addSubject() {
+    const name  = document.getElementById('new-subject').value.trim();
+    const desc  = document.getElementById('new-desc').value.trim();
+    const diff  = adminDiff;
+    const count = parseInt(document.getElementById('admin-q-count').value);
+    hideAlert('subject-alert');
+    if (!name) { showAlert('subject-alert','Subject name is required.'); return; }
+    try {
+      await apiAddSubject(name, desc, diff, count);
+      showAlert('subject-alert', `"${name}" added! (${diff}, ${count} questions)`, 'success');
+      document.getElementById('new-subject').value = '';
+      document.getElementById('new-desc').value = '';
+      loadSubjects();
+    } catch (e) {
+      showAlert('subject-alert', e.message || 'Failed to add subject.');
+    }
+  }
+
+  let selectedFile = null;
+  function onFileSelect(input) {
+    const file = input.files[0];
+    if (!file) return;
+    if (file.type !== 'application/pdf') {
+      showAlert('upload-alert','Only PDF files are allowed.'); return;
+    }
+    if (file.size > 10*1024*1024) {
+      showAlert('upload-alert','File must be under 10MB.'); return;
+    }
+    selectedFile = file;
+    document.getElementById('file-drop').classList.add('has-file');
+    document.getElementById('drop-content').innerHTML = `
+      <div style="font-size:36px;margin-bottom:8px"></div>
+      <p style="font-weight:500">${file.name}</p>
+      <p class="text-muted text-sm">${(file.size/1024/1024).toFixed(1)} MB</p>`;
+    hideAlert('upload-alert');
+  }
+
+  async function uploadMaterial() {
+    const subjectId = document.getElementById('upload-subject').value;
+    hideAlert('upload-alert');
+    if (!selectedFile) { showAlert('upload-alert','Please select a PDF file.'); return; }
+    if (!subjectId)    { showAlert('upload-alert','Please select a subject.'); return; }
+    try {
+      const msg = await apiUploadMaterial(selectedFile, subjectId);
+      showAlert('upload-alert', msg || 'Uploaded successfully!', 'success');
+      selectedFile = null;
+      document.getElementById('file-drop').classList.remove('has-file');
+      document.getElementById('drop-content').innerHTML = `
+        <div style="font-size:36px;margin-bottom:8px"></div>
+        <p class="text-muted text-sm">Click to select PDF (max 10MB)</p>`;
+      loadMaterials(subjectId);
+    } catch (e) {
+      showAlert('upload-alert', e.message || 'Upload failed.');
+    }
+  }
+
+  async function loadMaterials(subjectId) {
+    try {
+      const mats = await apiGetMaterials(subjectId);
+      const el = document.getElementById('materials-list');
+      el.innerHTML = mats.length === 0 ? '' :
+        '<p style="font-size:13px;font-weight:500;margin-bottom:8px">Uploaded materials:</p>' +
+        mats.map(m => `
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 0;
+                      border-bottom:1px solid rgba(255,255,255,0.06);font-size:13px">
+            <span></span>
+            <span style="flex:1">${m.fileName}</span>
+          </div>`).join('');
+    } catch (_) {}
+  }
+
+
+</script>
+
+</body>
+</html>

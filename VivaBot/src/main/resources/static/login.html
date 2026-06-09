@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VivaBot — Login</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+
+
+<nav class="navbar">
+  <a class="navbar-brand" href="login.html"> VivaBot</a>
+  <span class="text-muted text-sm">AI-Powered Viva Examination System</span>
+</nav>
+
+
+<div class="page-center">
+  <div class="text-center mb-24" style="margin-bottom:28px">
+    <div class="auth-logo"></div>
+    <h1 class="auth-title">Welcome back</h1>
+    <p class="auth-sub">Sign in to your VivaBot account</p>
+  </div>
+
+  <div class="card">
+    <div class="alert" id="alert"></div>
+
+    <div class="form-group">
+      <label class="form-label" for="email">Email address</label>
+      <input class="form-control" type="email" id="email"
+             placeholder="you@college.edu" autocomplete="email">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="password">Password</label>
+      <div style="position:relative">
+        <input class="form-control" type="password" id="password"
+               placeholder="••••••••" autocomplete="current-password"
+               style="padding-right:44px">
+        <button id="toggle-pw" type="button"
+                style="position:absolute;right:12px;top:50%;transform:translateY(-50%);
+                       background:none;border:none;cursor:pointer;font-size:18px;color:var(--gray-500)">
+        </button>
+      </div>
+    </div>
+
+    <button class="btn btn-primary btn-lg btn-block" id="login-btn" onclick="doLogin()">
+      Sign in
+    </button>
+
+    <div class="divider"></div>
+
+    <p class="text-center text-sm text-muted">
+      Don't have an account?
+      <a href="register.html" class="auth-link">Register here</a>
+    </p>
+  </div>
+
+  
+  <div style="margin-top:16px;padding:12px;background:var(--surface);border-radius:var(--radius);
+              border:1px dashed var(--border);font-size:13px;color:var(--muted)">
+    <strong style="color:var(--text)">Test accounts:</strong><br>
+    Student: student@test.com / pass123<br>
+    Admin: admin@test.com / pass123
+  </div>
+</div>
+
+<script src="api.js"></script>
+<script>
+  
+  if (getToken()) {
+    window.location.href = isAdmin() ? 'admin.html' : 'exam.html';
+  }
+
+ 
+  document.getElementById('toggle-pw').addEventListener('click', () => {
+    const pw = document.getElementById('password');
+    pw.type = pw.type === 'password' ? 'text' : 'password';
+  });
+
+  
+  document.getElementById('password').addEventListener('keyup', e => {
+    if (e.key === 'Enter') doLogin();
+  });
+
+  async function doLogin() {
+    const email    = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const btn      = document.getElementById('login-btn');
+
+    hideAlert('alert');
+
+    if (!email || !password) {
+      showAlert('alert', 'Please enter your email and password.');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Signing in…';
+
+    try {
+      const user = await apiLogin(email, password);
+
+      
+      if (user.role === 'ADMIN') {
+        window.location.href = 'admin.html';
+      } else {
+        window.location.href = 'exam.html';
+      }
+
+    } catch (err) {
+      showAlert('alert', err.message || 'Invalid email or password.');
+      btn.disabled = false;
+      btn.innerHTML = 'Sign in';
+    }
+  }
+</script>
+</body>
+</html>
